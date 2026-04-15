@@ -12,20 +12,17 @@ parameters {
   real k_platelet;
 }
 
-transformed parameters{
-  vector<lower=0, upper=1>[N] p;
-  for (n in 1:N){
-    p[n] = inv_logit(k_drug_use * drug_use[n] + k_Bilirubin*Bilirubin[n] + k_platelet*platelet[n]);    
+
+
+model {
+  k_drug_use ~ normal(-2, 1);
+  k_Bilirubin ~ normal(-2, 1);
+  k_platelet ~ normal(-2, 1);
+  
+
+  for (n in 1:N) {
+    survival[n] ~ bernoulli_logit(k_drug_use * drug_use[n] + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]);
   }
 }
 
-model {
-  k_drug_use ~ normal(-2,1);
-  k_Bilirubin ~ normal(-2,1);
-  k_platelet ~ normal(-2,1);
-  
-  for (n in 1:N){
-    survival[n] ~ bernoulli(p[n]);
-  }
-}
 

@@ -91,18 +91,15 @@ print(fit_2_vi$summary())
 
 #model 3: considering mixture model to detect drug efficiency
 mod_3 <- cmdstan_model("mixture.stan")
-copy$Edema_S <- ifelse(copy$Edema == "S", 1, 0)
-copy$Edema_Y <- ifelse(copy$Edema == "Y", 1, 0)
 stan_data_3 <- list(
   N = 258,
   survival = copy$flag,
-  drug_use = copy$drug_use,
+  drug_use = as.integer(copy$drug_use),
   Bilirubin = copy$Bilirubin_s,
   platelet = copy$Platelets_s,
   Ascites = copy$Ascites_dummy,
-  Spiders = copy$Spiders_dummy,
-  Edema_S = copy$Edema_S,
-  Edema_Y = copy$Edema_Y
+  edema = as.integer(copy$Edema_dummy),
+  Spiders = copy$Spiders_dummy
 )
 #method 1
 fit_3 <- mod_3$sample(

@@ -91,65 +91,40 @@ print(fit_2_vi$summary())
 
 #model 3: considering mixture model to detect drug efficiency
 mod_3 <- cmdstan_model("mixture.stan")
+copy$Edema_S <- ifelse(copy$Edema == "S", 1, 0)
+copy$Edema_Y <- ifelse(copy$Edema == "Y", 1, 0)
+stan_data_3 <- list(
+  N = 258,
+  survival = copy$flag,
+  drug_use = copy$drug_use,
+  Bilirubin = copy$Bilirubin_s,
+  platelet = copy$Platelets_s,
+  Ascites = copy$Ascites_dummy,
+  Spiders = copy$Spiders_dummy,
+  Edema_S = copy$Edema_S,
+  Edema_Y = copy$Edema_Y
+)
 #method 1
 fit_3 <- mod_3$sample(
-  data = list(
-    N = 258,
-    drug_use = copy$drug_use,
-    Bilirubin = copy$Bilirubin_s,
-    platelet = copy$Platelets_s,
-    survival = copy$flag,
-    edema = copy$Edema_dummy,
-    Spiders = copy$Spiders_dummy,
-    Ascites = copy$Ascites_dummy
-  ),
-  
-  iter_sampling = 10000
+  data = stan_data_3,
+  iter_warmup = 1000,
+  iter_sampling = 2000
 )
 
 fit_3$summary()
-probability_without_drug  = fit_3$draws("p_no_drug",format = 'df')
-probability_with_drug  = fit_3$draws("p_drug",format = 'df')
-
-idx_x <- which(copy$drug_use == 1)
-idx_y <- which(copy$drug_use != 1)
-
-x <- as.numeric(probability_with_drug[40000, idx_x])
-mean(x)
-
-y <- as.numeric(probability_without_drug[40000, idx_y])
-mean(y)
 
 
 
 # method 2
 fit_3_vi <- mod_3$variational(
-  data = list(
-    N = 258,
-    drug_use = copy$drug_use,
-    Bilirubin = copy$Bilirubin_s,
-    platelet = copy$Platelets_s,
-    survival = copy$flag,
-    edema = copy$Edema_dummy,
-    Spiders = copy$Spiders_dummy,
-    Ascites = copy$Ascites_dummy
-  ),
+  data = stan_data_3,
   seed = 123,
   output_samples = 2000
 )
 
 #comparison
-#comparison
 print("Model 3 - MCMC Summary:")
 print(fit_3$summary())
 print("Model 3 - VI Summary:")
 print(fit_3_vi$summary())
-
-
-
-
-
-
-
-
-
+sh

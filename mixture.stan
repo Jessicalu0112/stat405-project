@@ -1,95 +1,61 @@
 data {
-  int<lower=0> N;
+  int<lower=1> N;
+  array[N] int survival;
   array[N] int drug_use;
   vector[N] Bilirubin;
   vector[N] platelet;
-  array[N] int edema;
-  vector[N] Ascites;
-  vector[N] Spiders;
-  array[N] int survival;
+  array[N] int Ascites;
+  array[N] int Spiders;
+  array[N] int Edema_S;
+  array[N] int Edema_Y;
 }
 
 parameters {
-  real k_drug_use;
-  real k_drug_no_use;
+  real k_intercept;
   real k_Bilirubin;
   real k_platelet;
-  real k_edema_type_1;
-  real k_edema_type_2;
-  real k_edema_type_3;
   real k_Ascites;
   real k_Spiders;
+  real k_Edema_S;
+  real k_Edema_Y;
+  ordered[2] k_drug_comp;
+  real<lower=0, upper=1> theta;
 }
+
 
 transformed parameters {
-  vector<lower=0, upper=1>[N] p_drug;
-  vector<lower=0, upper=1>[N] p_no_drug;
+  vector[N] eta_comp1;
+  vector[N] eta_comp2;
 
   for (n in 1:N) {
-    if (drug_use[n] == 1) {
-      if (edema[n] == 1) {
-        p_drug[n] = inv_logit(
-          k_drug_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_1
-        );
-      } else if (edema[n] == 2) {
-        p_drug[n] = inv_logit(
-          k_drug_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_2
-        );
-      } else {
-        p_drug[n] = inv_logit(
-          k_drug_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_3
-        );
-      }
-    } else {
-      p_drug[n] = 1e-5;
-    }
-  }
+    real xb;
+    xb =
+      k_intercept + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
+      + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_Edema_S * Edema_S[n]
+      + k_Edema_Y * Edema_Y[n];
 
-  for (n in 1:N) {
-    if (drug_use[n] != 1) {
-      if (edema[n] == 1) {
-        p_no_drug[n] = inv_logit(
-          k_drug_no_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_1
-        );
-      } else if (edema[n] == 2) {
-        p_no_drug[n] = inv_logit(
-          k_drug_no_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_2
-        );
-      } else {
-        p_no_drug[n] = inv_logit(
-          k_drug_no_use + k_Bilirubin * Bilirubin[n] + k_platelet * platelet[n]
-          + k_Ascites * Ascites[n] + k_Spiders * Spiders[n] + k_edema_type_3
-        );
-      }
-    } else {
-      p_no_drug[n] = 1e-5;
-    }
+    eta_comp1[n] = xb + k_drug_comp[1] * drug_use[n];
+    eta_comp2[n] = xb + k_drug_comp[2] * drug_use[n];
   }
 }
+
 
 model {
-  k_drug_use ~ normal(0,10);
-  k_drug_no_use ~ normal(0,10);
-  k_Bilirubin ~ normal(-2,1);
-  k_platelet ~ normal(-2,1);
-  k_edema_type_1 ~ normal(2,1);
-  k_edema_type_2 ~ normal(0,1);
-  k_edema_type_3 ~ normal(0, 1);
-  
-  
-  for (n in 1:N){
-    if (drug_use[n] == 1){
-        survival[n] ~ bernoulli(p_drug[n]);
-  }else{
-    survival[n] ~ bernoulli(p_no_drug[n]);
-  }
+  k_intercept ~ normal(0, 2);
+  k_Bilirubin ~ normal(0, 1);
+  k_platelet ~ normal(0, 1);
+  k_Ascites ~ normal(0, 1);
+  k_Spiders ~ normal(0, 1);
+  k_Edema_S ~ normal(0, 1);
+  k_Edema_Y ~ normal(0, 1);
+  k_drug_comp ~ normal(0, 1);
+  theta ~ beta(1, 1);
+
+  for (n in 1:N) {
+    target += log_mix(
+      theta,
+      bernoulli_logit_lpmf(survival[n] | eta_comp1[n]),
+      bernoulli_logit_lpmf(survival[n] | eta_comp2[n])
+    );
   }
 }
-
-
-

@@ -124,4 +124,3 @@ print("Model 3 - MCMC Summary:")
 print(fit_3$summary())
 print("Model 3 - VI Summary:")
 print(fit_3_vi$summary())
-sh

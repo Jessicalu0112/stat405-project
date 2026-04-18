@@ -10,6 +10,7 @@ data {
 }
 
 parameters {
+  ordered[2] k_drug_comp;
   real k_Bilirubin;
   real k_platelet;
   real k_Ascites;
@@ -17,7 +18,6 @@ parameters {
   real k_edema_type_1;
   real k_edema_type_2;
   real k_edema_type_3;
-  ordered[2] k_drug_comp;
   real<lower=0, upper=1> theta;
 }
 
@@ -48,8 +48,6 @@ transformed parameters {
 model {
   k_Bilirubin ~ normal(-2,1);
   k_platelet ~ normal(-2,1);
-  k_Ascites ~ normal(0, 1);
-  k_Spiders ~ normal(0, 1);
   k_edema_type_1 ~ normal(2,1);
   k_edema_type_2 ~ normal(0,1);
   k_edema_type_3 ~ normal(-2,1);
